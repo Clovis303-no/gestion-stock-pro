@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>GestionStock Pro - Ventes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css3/style3.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
+                <i class="fas fa-moon"></i>
+            </button>
+            <h1><i class="fas fa-shopping-cart"></i> Gestion des Ventes</h1>
+            <p>Enregistrez vos ventes</p>
+        </header>
+
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="stock.html" class="nav-item">
+                <i class="fas fa-boxes"></i>
+                <span>Stock</span>
+            </a>
+            <a href="ventes.html" class="nav-item active">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Ventes</span>
+            </a>
+            <a href="clients.html" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </a>
+            <a href="depenses.html" class="nav-item">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Dépenses</span>
+            </a>
+            <a href="benefices.html" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Bénéfices</span>
+            </a>
+            <a href="rapports.html" class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Rapports</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            <!-- Statistiques des ventes du jour -->
+            <div class="stats-grid" id="salesStats">
+                <!-- Rempli dynamiquement -->
+            </div>
+
+            <!-- Formulaire de vente rapide -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-cash-register"></i>
+                    Nouvelle vente
+                </div>
+                <form id="saleForm" onsubmit="processSale(event)">
+                    <div class="form-group">
+                        <label for="saleClient">Client *</label>
+                        <select class="form-control" id="saleClient" required>
+                            <option value="">Sélectionner un client</option>
+                            <!-- Rempli dynamiquement -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saleProduct">Produit *</label>
+                        <select class="form-control" id="saleProduct" required onchange="updateProductInfo()">
+                            <option value="">Sélectionner un produit</option>
+                            <!-- Rempli dynamiquement -->
+                        </select>
+                    </div>
+
+                    <div id="productInfo" style="display: none; margin-bottom: 15px; padding: 12px; background: var(--light-bg); border-radius: 8px;">
+                        <small style="color: var(--text-secondary);">
+                            <div>Prix de vente: <strong id="infoPrice">-</strong></div>
+                            <div>Stock disponible: <strong id="infoStock">-</strong></div>
+                            <div>Bénéfice unitaire: <strong id="infoProfit">-</strong></div>
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saleQuantity">Quantité *</label>
+                        <input type="number" class="form-control" id="saleQuantity" required min="1" value="1" onchange="calculateTotal()" onkeyup="calculateTotal()">
+                    </div>
+
+                    <div id="saleTotal" style="display: none; margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, var(--secondary-color), #059669); color: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem;">Montant total</div>
+                        <div style="font-size: 1.8rem; font-weight: 700;" id="totalAmount">0.00 €</div>
+                        <div style="font-size: 0.8rem; margin-top: 5px;">Bénéfice estimé: <span id="estimatedProfit">0.00 €</span></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="fas fa-check-circle"></i> Enregistrer la vente
+                    </button>
+                </form>
+            </div>
+
+            <!-- Historique des ventes -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-history"></i>
+                    Historique des ventes
+                </div>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchSale" placeholder="Rechercher une vente..." onkeyup="filterSales()">
+                </div>
+                <div class="table-container">
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th>Produit</th>
+                                <th>Qté</th>
+                                <th>Total</th>
+                                <th>Bénéfice</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesList">
+                            <!-- Rempli dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noSales" class="empty-state" style="display: none;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <p>Aucune vente enregistrée</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Navigation mobile -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="stock.html" class="bottom-nav-item">
+                <i class="fas fa-boxes"></i>
+                <span>Stock</span>
+            </a>
+            <a href="ventes.html" class="bottom-nav-item active">
+                <i class="fas fa-plus-circle"></i>
+                <span>Vente</span>
+            </a>
+            <a href="clients.html" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </a>
+            <a href="rapports.html" class="bottom-nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Rapports</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="data/localStorage.js"></script>
+    <script src="js3/ventes3.js"></script>
+</body>
+</html>
