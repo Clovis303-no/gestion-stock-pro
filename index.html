@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>GestionStock Pro - Dashboard</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css3/style3.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
+                <i class="fas fa-moon"></i>
+            </button>
+            <h1><i class="fas fa-chart-line"></i> GestionStock Pro</h1>
+            <p>Tableau de bord</p>
+        </header>
+
+        <!-- Navigation principale -->
+        <nav class="nav-menu" id="mainNav">
+            <a href="index.html" class="nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="stock.html" class="nav-item">
+                <i class="fas fa-boxes"></i>
+                <span>Stock</span>
+            </a>
+            <a href="ventes.html" class="nav-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Ventes</span>
+            </a>
+            <a href="clients.html" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </a>
+            <a href="depenses.html" class="nav-item">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Dépenses</span>
+            </a>
+            <a href="benefices.html" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Bénéfices</span>
+            </a>
+            <a href="rapports.html" class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Rapports</span>
+            </a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <main class="main-content">
+            <!-- Date du jour -->
+            <div class="card" style="text-align: center; background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white;">
+                <h2 id="currentDate" style="margin: 0; font-size: 1.1rem;"></h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.9;" id="currentTime"></p>
+            </div>
+
+            <!-- Statistiques rapides -->
+            <div class="stats-grid" id="statsGrid">
+                <!-- Rempli dynamiquement par JavaScript -->
+            </div>
+
+            <!-- Produits les plus vendus -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-star"></i>
+                    Produits les plus vendus
+                </div>
+                <div id="topProducts">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Graphique des ventes -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Ventes des 7 derniers jours
+                </div>
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Dernières ventes -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-history"></i>
+                    Dernières ventes
+                </div>
+                <div id="recentSales">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Navigation mobile inférieure -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="bottom-nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="stock.html" class="bottom-nav-item">
+                <i class="fas fa-boxes"></i>
+                <span>Stock</span>
+            </a>
+            <a href="ventes.html" class="bottom-nav-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>Vente</span>
+            </a>
+            <a href="clients3.html" class="bottom-nav-item">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </a>
+            <a href="rapports.html" class="bottom-nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Rapports</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Scripts -->
+    <script src="data/localStorage.js"></script>
+    <script src="js3/dashboard3.js"></script>
+</body>
+</html>
