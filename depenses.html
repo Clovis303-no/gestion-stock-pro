@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>GestionStock Pro - Dépenses</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css3/style3.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
+                <i class="fas fa-moon"></i>
+            </button>
+            <h1><i class="fas fa-money-bill-wave"></i> Gestion des Dépenses</h1>
+            <p>Suivez vos dépenses</p>
+        </header>
+
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="stock.html" class="nav-item">
+                <i class="fas fa-boxes"></i>
+                <span>Stock</span>
+            </a>
+            <a href="ventes.html" class="nav-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Ventes</span>
+            </a>
+            <a href="clients.html" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </a>
+            <a href="depenses.html" class="nav-item active">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Dépenses</span>
+            </a>
+            <a href="benefices.html" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Bénéfices</span>
+            </a>
+            <a href="rapports.html" class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Rapports</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            <!-- Statistiques des dépenses -->
+            <div class="stats-grid" id="expensesStats">
+                <!-- Rempli dynamiquement -->
+            </div>
+
+            <!-- Ajouter une dépense -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-plus-circle"></i>
+                    Nouvelle dépense
+                </div>
+                <form id="expenseForm" onsubmit="addExpense(event)">
+                    <div class="form-group">
+                        <label for="expenseCategory">Catégorie *</label>
+                        <select class="form-control" id="expenseCategory" required>
+                            <option value="">Sélectionner une catégorie</option>
+                            <option value="Transport">🚗 Transport</option>
+                            <option value="Loyer">🏠 Loyer</option>
+                            <option value="Publicité">📢 Publicité</option>
+                            <option value="Électricité">💡 Électricité</option>
+                            <option value="Internet">🌐 Internet</option>
+                            <option value="Fournitures">📦 Fournitures</option>
+                            <option value="Maintenance">🔧 Maintenance</option>
+                            <option value="Salaires">👥 Salaires</option>
+                            <option value="Impôts">📋 Impôts</option>
+                            <option value="Autres">📌 Autres</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseAmount">Montant (€) *</label>
+                        <input type="number" class="form-control" id="expenseAmount" required step="0.01" min="0.01" placeholder="0.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseDescription">Description</label>
+                        <textarea class="form-control" id="expenseDescription" rows="3" placeholder="Description de la dépense..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseDate">Date</label>
+                        <input type="date" class="form-control" id="expenseDate">
+                    </div>
+
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-save"></i> Enregistrer la dépense
+                    </button>
+                </form>
+            </div>
+
+            <!-- Graphique des dépenses par catégorie -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Répartition des dépenses
+                </div>
+                <div class="chart-container">
+                    <canvas id="expensesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Historique des dépenses -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-history"></i>
+                    Historique des dépenses
+                </div>
+                <div class="table-container">
+                    <table id="expensesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Catégorie</th>
+                                <th>Description</th>
+                                <th>Montant</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesList">
+                            <!-- Rempli dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noExpenses" class="empty-state" style="display: none;">
+                    <i class="fas fa-receipt"></i>
+                    <p>Aucune dépense enregistrée</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Navigation mobile -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="bottom-nav-item">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </a>
+            <a href="stock.html" class="bottom-nav-item">
+                <i class="fas fa-boxes"></i>
+                <span>Stock</span>
+            </a>
+            <a href="ventes.html" class="bottom-nav-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>Vente</span>
+            </a>
+            <a href="depenses.html" class="bottom-nav-item active">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Dépenses</span>
+            </a>
+            <a href="rapports.html" class="bottom-nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Rapports</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="data/localStorage.js"></script>
+    <script src="js3/depenses3.js"></script>
+</body>
+</html>
