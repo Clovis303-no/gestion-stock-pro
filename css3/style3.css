@@ -758,3 +758,39 @@ td {
 .sort-btn.active {
     animation: pulse-sort 2s infinite;
 }
+
+/* Styles pour le menu de tri flottant */
+.sort-option {
+    transition: all 0.2s ease;
+}
+
+.sort-option:hover {
+    background: var(--light-bg) !important;
+}
+
+.sort-option:active {
+    transform: scale(0.98);
+}
+
+#sortMenuButton {
+    transition: all 0.3s ease;
+}
+
+#sortMenuButton .fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+#sortDropdown {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
