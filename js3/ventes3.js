@@ -1,7 +1,9 @@
 // ============================================
-// GESTION DES VENTES
-// Gère l'enregistrement et l'historique des ventes
+// GESTION DES VENTES - Version multi-produits
 // ============================================
+
+// Panier temporaire (stocké en mémoire)
+let cart = [];
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -44,7 +46,7 @@ function loadSalesStats() {
     `;
 }
 
-// Charger la liste des clients dans le sélecteur
+// Charger la liste des clients
 function loadClientSelect() {
     const clients = db.getClients();
     const select = document.getElementById('saleClient');
@@ -57,140 +59,253 @@ function loadClientSelect() {
     select.innerHTML = options;
 }
 
-// Charger la liste des produits dans le sélecteur
+// Charger la liste des produits disponibles
 function loadProductSelect() {
     const products = db.getProducts();
     const select = document.getElementById('saleProduct');
     
-    let options = '<option value="">Sélectionner un produit</option>';
+    let options = '<option value="">Choisir un produit</option>';
     products.forEach(product => {
         if (product.quantity > 0) {
-            options += `<option value="${product.id}">${product.name} - ${product.sellingPrice.toFixed(2)} € (Stock: ${product.quantity})</option>`;
+            options += `<option value="${product.id}">${product.name} - ${product.sellingPrice.toFixed(2)} € (${product.quantity} dispo)</option>`;
         }
     });
     
     select.innerHTML = options;
 }
 
-// Mettre à jour les informations du produit sélectionné
-function updateProductInfo() {
-    const productId = document.getElementById('saleProduct').value;
-    const productInfo = document.getElementById('productInfo');
-    
-    if (!productId) {
-        productInfo.style.display = 'none';
-        document.getElementById('saleTotal').style.display = 'none';
-        return;
-    }
-
-    const product = db.getProductById(productId);
-    if (!product) return;
-
-    productInfo.style.display = 'block';
-    document.getElementById('infoPrice').textContent = `${product.sellingPrice.toFixed(2)} €`;
-    document.getElementById('infoStock').textContent = `${product.quantity} unités`;
-    
-    const profitPerUnit = product.sellingPrice - product.purchasePrice;
-    document.getElementById('infoProfit').textContent = `${profitPerUnit.toFixed(2)} €`;
-    
-    calculateTotal();
-}
-
-// Calculer le total de la vente
-function calculateTotal() {
+// Ajouter un produit au panier
+function addToCart() {
     const productId = document.getElementById('saleProduct').value;
     const quantity = parseInt(document.getElementById('saleQuantity').value) || 0;
-    const saleTotal = document.getElementById('saleTotal');
     
-    if (!productId || quantity <= 0) {
-        saleTotal.style.display = 'none';
-        return;
-    }
-
-    const product = db.getProductById(productId);
-    if (!product) return;
-
-    // Vérifier le stock
-    if (quantity > product.quantity) {
-        showToast('Stock insuffisant !', 'error');
-        document.getElementById('saleQuantity').value = product.quantity;
-        return;
-    }
-
-    const totalAmount = product.sellingPrice * quantity;
-    const profit = (product.sellingPrice - product.purchasePrice) * quantity;
-    
-    saleTotal.style.display = 'block';
-    document.getElementById('totalAmount').textContent = `${totalAmount.toFixed(2)} €`;
-    document.getElementById('estimatedProfit').textContent = `${profit.toFixed(2)} €`;
-}
-
-// Traiter la vente
-function processSale(event) {
-    event.preventDefault();
-
-    const clientId = document.getElementById('saleClient').value;
-    const productId = document.getElementById('saleProduct').value;
-    const quantity = parseInt(document.getElementById('saleQuantity').value);
-
-    // Validations
-    if (!clientId) {
-        showToast('Veuillez sélectionner un client', 'error');
-        return;
-    }
+    // Validation
     if (!productId) {
         showToast('Veuillez sélectionner un produit', 'error');
         return;
     }
-    if (!quantity || quantity <= 0) {
+    if (quantity <= 0) {
         showToast('La quantité doit être supérieure à 0', 'error');
         return;
     }
-
+    
     const product = db.getProductById(productId);
     if (!product) {
         showToast('Produit introuvable', 'error');
         return;
     }
-    if (quantity > product.quantity) {
-        showToast(`Stock insuffisant ! Disponible: ${product.quantity}`, 'error');
+    
+    // Vérifier le stock disponible
+    const existingCartItem = cart.find(item => item.productId === productId);
+    const currentQuantityInCart = existingCartItem ? existingCartItem.quantity : 0;
+    const totalRequested = currentQuantityInCart + quantity;
+    
+    if (totalRequested > product.quantity) {
+        showToast(`Stock insuffisant ! Disponible: ${product.quantity}, Déjà dans le panier: ${currentQuantityInCart}`, 'error');
         return;
     }
+    
+    // Ajouter ou mettre à jour le produit dans le panier
+    if (existingCartItem) {
+        existingCartItem.quantity += quantity;
+        showToast(`${quantity} ${product.name} ajouté(s) au panier (Total: ${existingCartItem.quantity})`, 'success');
+    } else {
+        cart.push({
+            productId: productId,
+            productName: product.name,
+            sellingPrice: product.sellingPrice,
+            purchasePrice: product.purchasePrice,
+            quantity: quantity,
+            maxStock: product.quantity
+        });
+        showToast(`${quantity} ${product.name} ajouté(s) au panier`, 'success');
+    }
+    
+    // Réinitialiser la sélection
+    document.getElementById('saleProduct').value = '';
+    document.getElementById('saleQuantity').value = '1';
+    
+    // Mettre à jour l'affichage du panier
+    updateCartDisplay();
+    loadProductSelect(); // Rafraîchir les stocks disponibles
+}
 
-    // Créer la vente
-    const sale = {
-        clientId: clientId,
-        productId: productId,
-        quantity: quantity,
-        totalAmount: product.sellingPrice * quantity,
-        profit: (product.sellingPrice - product.purchasePrice) * quantity,
-        purchasePrice: product.purchasePrice,
-        sellingPrice: product.sellingPrice
-    };
+// Mettre à jour l'affichage du panier
+function updateCartDisplay() {
+    const cartContainer = document.getElementById('cartContainer');
+    const cartEmpty = document.getElementById('cartEmpty');
+    const cartItems = document.getElementById('cartItems');
+    const cartCount = document.getElementById('cartCount');
+    
+    if (cart.length === 0) {
+        cartContainer.style.display = 'none';
+        cartEmpty.style.display = 'block';
+        return;
+    }
+    
+    cartContainer.style.display = 'block';
+    cartEmpty.style.display = 'none';
+    
+    // Mettre à jour le compteur
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    cartCount.textContent = `(${totalItems} produit${totalItems > 1 ? 's' : ''})`;
+    
+    // Afficher les articles du panier
+    let html = '';
+    cart.forEach((item, index) => {
+        const subtotal = item.sellingPrice * item.quantity;
+        const profit = (item.sellingPrice - item.purchasePrice) * item.quantity;
+        
+        html += `
+            <div style="display: flex; align-items: center; padding: 10px; margin-bottom: 8px; 
+                        background: var(--light-bg); border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 0.9rem;">${item.productName}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        ${item.sellingPrice.toFixed(2)} € x ${item.quantity} = <strong>${subtotal.toFixed(2)} €</strong>
+                        <br><small>Bénéfice: ${profit.toFixed(2)} €</small>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <button type="button" class="btn btn-sm" onclick="updateCartItemQuantity(${index}, -1)" 
+                            style="padding: 5px 10px; min-width: 30px; background: var(--border-color);">-</button>
+                    <span style="font-weight: 600; min-width: 25px; text-align: center;">${item.quantity}</span>
+                    <button type="button" class="btn btn-sm" onclick="updateCartItemQuantity(${index}, 1)" 
+                            style="padding: 5px 10px; min-width: 30px; background: var(--border-color);">+</button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeFromCart(${index})" 
+                            style="margin-left: 5px;" title="Retirer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    cartItems.innerHTML = html;
+    
+    // Calculer et afficher les totaux
+    const total = cart.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+    const totalProfit = cart.reduce((sum, item) => sum + ((item.sellingPrice - item.purchasePrice) * item.quantity), 0);
+    
+    document.getElementById('cartTotal').textContent = `${total.toFixed(2)} €`;
+    document.getElementById('cartProfit').textContent = `${totalProfit.toFixed(2)} €`;
+}
 
-    if (db.addSale(sale)) {
-        const client = db.getClientById(clientId);
-        showToast(`Vente de ${quantity} ${product.name} à ${client.name} enregistrée !`, 'success');
+// Modifier la quantité d'un article dans le panier
+function updateCartItemQuantity(index, change) {
+    const item = cart[index];
+    const newQuantity = item.quantity + change;
+    
+    // Vérifier les limites
+    if (newQuantity < 1) {
+        removeFromCart(index);
+        return;
+    }
+    
+    if (newQuantity > item.maxStock) {
+        showToast(`Stock maximum disponible: ${item.maxStock}`, 'error');
+        return;
+    }
+    
+    item.quantity = newQuantity;
+    updateCartDisplay();
+}
+
+// Retirer un article du panier
+function removeFromCart(index) {
+    const item = cart[index];
+    cart.splice(index, 1);
+    showToast(`${item.productName} retiré du panier`, 'success');
+    updateCartDisplay();
+    loadProductSelect();
+}
+
+// Traiter la vente (finaliser le panier)
+function processSale(event) {
+    event.preventDefault();
+    
+    const clientId = document.getElementById('saleClient').value;
+    
+    // Validations
+    if (!clientId) {
+        showToast('Veuillez sélectionner un client', 'error');
+        return;
+    }
+    if (cart.length === 0) {
+        showToast('Ajoutez au moins un produit au panier', 'error');
+        return;
+    }
+    
+    // Vérifier les stocks une dernière fois
+    for (const item of cart) {
+        const product = db.getProductById(item.productId);
+        if (!product) {
+            showToast(`Le produit "${item.productName}" n'existe plus`, 'error');
+            return;
+        }
+        if (item.quantity > product.quantity) {
+            showToast(`Stock insuffisant pour "${item.productName}" ! Disponible: ${product.quantity}`, 'error');
+            return;
+        }
+    }
+    
+    // Traiter chaque article du panier comme une vente séparée
+    let allSuccess = true;
+    const client = db.getClientById(clientId);
+    
+    for (const item of cart) {
+        const sale = {
+            clientId: clientId,
+            productId: item.productId,
+            quantity: item.quantity,
+            totalAmount: item.sellingPrice * item.quantity,
+            profit: (item.sellingPrice - item.purchasePrice) * item.quantity,
+            purchasePrice: item.purchasePrice,
+            sellingPrice: item.sellingPrice
+        };
+        
+        if (!db.addSale(sale)) {
+            allSuccess = false;
+            break;
+        }
+    }
+    
+    if (allSuccess) {
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const totalAmount = cart.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
+        
+        showToast(`Vente de ${totalItems} produit(s) pour ${totalAmount.toFixed(2)} € à ${client.name} réussie !`, 'success');
+        
+        // Vider le panier
+        cart = [];
+        updateCartDisplay();
         
         // Réinitialiser le formulaire
         document.getElementById('saleForm').reset();
-        document.getElementById('productInfo').style.display = 'none';
-        document.getElementById('saleTotal').style.display = 'none';
+        document.getElementById('saleClient').value = '';
         
-        // Rafraîchir les données
+        // Rafraîchir
         loadSalesStats();
         loadProductSelect();
         loadSalesHistory();
         
-        // Notification spéciale si stock faible
-        const updatedProduct = db.getProductById(productId);
-        if (updatedProduct && updatedProduct.quantity < 10) {
-            setTimeout(() => {
-                showToast(`⚠️ Stock faible pour ${updatedProduct.name}: ${updatedProduct.quantity} restants`, 'error');
-            }, 2000);
-        }
+        // Vérifier les stocks faibles
+        checkLowStock();
     } else {
         showToast('Erreur lors de l\'enregistrement de la vente', 'error');
+    }
+}
+
+// Vérifier les stocks faibles après la vente
+function checkLowStock() {
+    const products = db.getProducts();
+    const lowStockProducts = products.filter(p => p.quantity > 0 && p.quantity < 10);
+    
+    if (lowStockProducts.length > 0) {
+        setTimeout(() => {
+            const names = lowStockProducts.map(p => `${p.name} (${p.quantity})`).join(', ');
+            showToast(`⚠️ Stocks faibles: ${names}`, 'error');
+        }, 2000);
     }
 }
 
@@ -250,7 +365,7 @@ function filterSales() {
     loadSalesHistory(searchTerm);
 }
 
-// Fonction utilitaire pour les notifications toast
+// Afficher une notification toast
 function showToast(message, type = 'success') {
     const existingToasts = document.querySelectorAll('.toast');
     existingToasts.forEach(t => t.remove());
