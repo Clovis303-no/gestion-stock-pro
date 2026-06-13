@@ -61,6 +61,28 @@
                 <input type="text" id="searchClient" placeholder="Rechercher un client..." onkeyup="filterClients()">
             </div>
 
+<!-- AJOUTER CE BLOC DE TRI ICI -->
+<div class="card" style="padding: 12px; margin-bottom: 15px;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 0.85rem; color: var(--text-secondary); margin-right: 5px;">
+            <i class="fas fa-sort-amount-down"></i> Trier par:
+        </span>
+        <button class="btn btn-sm btn-primary sort-btn active" onclick="sortClients('name')" id="sortName">
+            <i class="fas fa-user"></i> Nom
+        </button>
+        <button class="btn btn-sm btn-secondary sort-btn" onclick="sortClients('purchases')" id="sortPurchases">
+            <i class="fas fa-shopping-cart"></i> Achats
+        </button>
+        <button class="btn btn-sm btn-secondary sort-btn" onclick="sortClients('total')" id="sortTotal">
+            <i class="fas fa-euro-sign"></i> Total dépensé
+        </button>
+        <button class="btn btn-sm btn-secondary sort-btn" onclick="sortClients('date')" id="sortDate">
+            <i class="fas fa-calendar"></i> Date d'ajout
+        </button>
+    </div>
+</div>
+<!-- FIN DU BLOC DE TRI -->
+
             <button class="btn btn-primary" onclick="showAddClientModal()" style="margin-bottom: 20px;">
                 <i class="fas fa-user-plus"></i> Ajouter un client
             </button>
