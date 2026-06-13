@@ -696,3 +696,65 @@ td {
         border: 1px solid #ddd;
     }
 }
+
+/* Styles pour les boutons de tri */
+.sort-btn {
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+
+.sort-btn.active {
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.sort-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Animation pour les cartes clients */
+.client-card {
+    transition: all 0.3s ease;
+}
+
+.client-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Badge de classement */
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.rank-1 {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    color: white;
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #cd853f, #8b6914);
+    color: white;
+}
+
+/* Animation de pulsation pour les boutons actifs */
+@keyframes pulse-sort {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+}
+
+.sort-btn.active {
+    animation: pulse-sort 2s infinite;
+}
