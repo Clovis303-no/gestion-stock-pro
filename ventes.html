@@ -56,52 +56,75 @@
             </div>
 
             <!-- Formulaire de vente rapide -->
-            <div class="card">
-                <div class="card-title">
-                    <i class="fas fa-cash-register"></i>
-                    Nouvelle vente
-                </div>
-                <form id="saleForm" onsubmit="processSale(event)">
-                    <div class="form-group">
-                        <label for="saleClient">Client *</label>
-                        <select class="form-control" id="saleClient" required>
-                            <option value="">Sélectionner un client</option>
-                            <!-- Rempli dynamiquement -->
-                        </select>
-                    </div>
+ <!-- Panier d'achat -->
+<div class="card">
+    <div class="card-title">
+        <i class="fas fa-cash-register"></i>
+        Nouvelle vente
+    </div>
+    <form id="saleForm" onsubmit="processSale(event)">
+        <!-- Sélection du client -->
+        <div class="form-group">
+            <label for="saleClient">Client *</label>
+            <select class="form-control" id="saleClient" required>
+                <option value="">Sélectionner un client</option>
+            </select>
+        </div>
 
-                    <div class="form-group">
-                        <label for="saleProduct">Produit *</label>
-                        <select class="form-control" id="saleProduct" required onchange="updateProductInfo()">
-                            <option value="">Sélectionner un produit</option>
-                            <!-- Rempli dynamiquement -->
-                        </select>
-                    </div>
-
-                    <div id="productInfo" style="display: none; margin-bottom: 15px; padding: 12px; background: var(--light-bg); border-radius: 8px;">
-                        <small style="color: var(--text-secondary);">
-                            <div>Prix de vente: <strong id="infoPrice">-</strong></div>
-                            <div>Stock disponible: <strong id="infoStock">-</strong></div>
-                            <div>Bénéfice unitaire: <strong id="infoProfit">-</strong></div>
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saleQuantity">Quantité *</label>
-                        <input type="number" class="form-control" id="saleQuantity" required min="1" value="1" onchange="calculateTotal()" onkeyup="calculateTotal()">
-                    </div>
-
-                    <div id="saleTotal" style="display: none; margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, var(--secondary-color), #059669); color: white; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem;">Montant total</div>
-                        <div style="font-size: 1.8rem; font-weight: 700;" id="totalAmount">0.00 €</div>
-                        <div style="font-size: 0.8rem; margin-top: 5px;">Bénéfice estimé: <span id="estimatedProfit">0.00 €</span></div>
-                    </div>
-
-                    <button type="submit" class="btn btn-secondary">
-                        <i class="fas fa-check-circle"></i> Enregistrer la vente
-                    </button>
-                </form>
+        <!-- Ajout de produits au panier -->
+        <div style="background: var(--light-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+            <label style="font-weight: 600; margin-bottom: 10px; display: block;">
+                <i class="fas fa-plus-circle"></i> Ajouter un produit
+            </label>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <select class="form-control" id="saleProduct" style="flex: 2;">
+                    <option value="">Choisir un produit</option>
+                </select>
+                <input type="number" class="form-control" id="saleQuantity" 
+                       placeholder="Qté" min="1" value="1" style="flex: 0.5; text-align: center;">
+                <button type="button" class="btn btn-sm btn-primary" onclick="addToCart()" style="flex: 0.5; white-space: nowrap;">
+                    <i class="fas fa-plus"></i> Ajouter
+                </button>
             </div>
+            
+            <small style="color: var(--text-secondary);" id="productHint">
+                Sélectionnez un produit et une quantité
+            </small>
+        </div>
+
+        <!-- Panier -->
+        <div id="cartContainer" style="display: none;">
+            <div style="font-weight: 600; margin-bottom: 10px;">
+                <i class="fas fa-shopping-basket"></i> Panier 
+                <span id="cartCount" style="color: var(--primary-color);">(0 produit)</span>
+            </div>
+            
+            <div id="cartItems" style="margin-bottom: 15px;">
+                <!-- Les produits ajoutés apparaissent ici -->
+            </div>
+            
+            <!-- Total du panier -->
+            <div style="background: linear-gradient(135deg, var(--secondary-color), #059669); 
+                        color: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; text-align: center;">
+                <div style="font-size: 0.9rem; opacity: 0.9;">Total de la vente</div>
+                <div style="font-size: 2rem; font-weight: 700;" id="cartTotal">0.00 €</div>
+                <div style="font-size: 0.85rem; margin-top: 5px; opacity: 0.9;">
+                    Bénéfice estimé: <span id="cartProfit">0.00 €</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-check-circle"></i> Finaliser la vente
+            </button>
+        </div>
+        
+        <div id="cartEmpty" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+            <i class="fas fa-shopping-cart" style="font-size: 2rem; opacity: 0.3;"></i>
+            <p>Ajoutez des produits au panier</p>
+        </div>
+    </form>
+</div>
 
             <!-- Historique des ventes -->
             <div class="card">
