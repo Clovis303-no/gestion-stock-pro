@@ -283,7 +283,7 @@ function displaySortedClients(clients, sortCriteria) {
         'purchases': 'Trié par nombre d\'achats',
         'total': 'Trié par total dépensé',
         'date': 'Trié par dernier achat',
-        'added': 'Trié par date d\'ajout'
+        'added': 'Trié par date d\'ajout (plus récent)'
     };
     
     const criteriaIcons = {
@@ -325,6 +325,11 @@ function displaySortedClients(clients, sortCriteria) {
             client.addedDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : 
             'Inconnue';
         
+        // Date d'ajout complète avec heure
+        const addedDateTime = client.addedDate && client.addedDate.getTime() > 0 ? 
+            client.addedDate.toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 
+            'Inconnue';
+        
         // Niveau client
         let clientLevel, levelClass;
         if (client.totalSpent > 1000) {
@@ -350,7 +355,7 @@ function displaySortedClients(clients, sortCriteria) {
             default: progressColor = '#10b981';
         }
         
-        // Icône de statut d'activité
+        // Indicateur d'activité
         const isActive = client.totalPurchases > 0;
         const lastPurchaseDays = lastPurchase ? 
             Math.floor((new Date() - lastPurchase) / (1000 * 60 * 60 * 24)) : 999;
@@ -370,8 +375,11 @@ function displaySortedClients(clients, sortCriteria) {
             activityColor = '#ef4444';
         }
         
+        // Déterminer si on affiche la date d'ajout en priorité (pour le tri 'added')
+        const showAddedDateFirst = (sortCriteria === 'added');
+        
         html += `
-            <div class="client-card animate-in" style="animation-delay: ${index * 0.05}s;">
+            <div class="client-card" style="opacity: 0; transform: translateY(20px);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
                     <div style="flex: 1; min-width: 0;">
                         <!-- En-tête avec avatar -->
@@ -401,13 +409,22 @@ function displaySortedClients(clients, sortCriteria) {
                         
                         <!-- Adresse -->
                         ${client.address ? `
-                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; padding-left: ${rank <= 3 ? '28px' : '0px'};">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; padding-left: ${rank <= 3 && sortCriteria !== 'name' ? '28px' : '0px'};">
                                 <i class="fas fa-map-marker-alt"></i> ${client.address}
                             </div>
                         ` : ''}
                         
+                        <!-- Date d'ajout en évidence si trié par date d'ajout -->
+                        ${showAddedDateFirst ? `
+                            <div style="margin-bottom: 8px; padding: 8px 12px; background: #f0fdf4; border-radius: 8px; padding-left: ${rank <= 3 && sortCriteria !== 'name' ? '28px' : '12px'};">
+                                <i class="fas fa-user-plus" style="color: #10b981;"></i>
+                                <strong style="font-size: 0.85rem; color: #065f46;">Ajouté le :</strong>
+                                <span style="font-size: 0.85rem; color: #065f46;">${addedDateTime}</span>
+                            </div>
+                        ` : ''}
+                        
                         <!-- Statistiques -->
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; padding-left: ${rank <= 3 ? '28px' : '0px'};">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; padding-left: ${rank <= 3 && sortCriteria !== 'name' ? '28px' : '0px'};">
                             <span class="badge badge-info" style="font-size: 0.7rem;">
                                 <i class="fas fa-shopping-cart"></i> ${client.totalPurchases} achat${client.totalPurchases > 1 ? 's' : ''}
                             </span>
@@ -419,14 +436,16 @@ function displaySortedClients(clients, sortCriteria) {
                                     <i class="fas fa-clock"></i> ${lastPurchaseDate}
                                 </span>
                             ` : ''}
-                            <span class="badge" style="font-size: 0.7rem; background: #f0fdf4; color: #065f46;">
-                                <i class="fas fa-user-plus"></i> ${addedDate}
-                            </span>
+                            ${!showAddedDateFirst ? `
+                                <span class="badge" style="font-size: 0.7rem; background: #f0fdf4; color: #065f46;">
+                                    <i class="fas fa-user-plus"></i> ${addedDate}
+                                </span>
+                            ` : ''}
                         </div>
                         
                         <!-- Barre de progression -->
                         ${client.totalSpent > 0 ? `
-                            <div style="padding-left: ${rank <= 3 ? '28px' : '0px'};">
+                            <div style="padding-left: ${rank <= 3 && sortCriteria !== 'name' ? '28px' : '0px'};">
                                 <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 4px;">
                                     <span style="color: var(--text-secondary);">Progression ${clientLevel}</span>
                                     <span style="font-weight: 600; color: ${progressColor};">${Math.min((client.totalSpent / 1000) * 100, 100).toFixed(0)}%</span>
@@ -453,6 +472,16 @@ function displaySortedClients(clients, sortCriteria) {
     });
     
     container.innerHTML = html;
+    
+    // Animation d'entrée séquentielle - UNE SEULE FOIS
+    const cards = container.querySelectorAll('.client-card');
+    cards.forEach((card, i) => {
+        setTimeout(() => {
+            card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, i * 60);
+    });
 }
 
 // ============================================
@@ -593,13 +622,11 @@ function showToast(message, type = 'success') {
     
     document.body.appendChild(toast);
     
-    // Animation d'entrée
     requestAnimationFrame(() => {
         toast.style.transform = 'translateX(0)';
         toast.style.opacity = '1';
     });
     
-    // Disparition automatique
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(100%)';
