@@ -1,16 +1,19 @@
 // ============================================
-// GESTION DES CLIENTS
-// Gère l'ajout, modification et suppression des clients
-// Avec menu de tri flottant
+// GESTION DES CLIENTS - Version complète
+// Avec menu de tri flottant et 5 options de tri
 // ============================================
 
 let editingClientId = null;
 let sortMenuOpen = false;
+let currentSortCriteria = 'name';
 
-// Initialisation
+// ============================================
+// INITIALISATION
+// ============================================
+
 document.addEventListener('DOMContentLoaded', function() {
     loadClientsStats();
-    sortClients('name'); // Tri par défaut : Nom
+    sortClients('name');
     
     // Fermer le menu si on clique en dehors
     document.addEventListener('click', function(event) {
@@ -20,6 +23,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sortMenuOpen && dropdown && button && 
             !dropdown.contains(event.target) && 
             !button.contains(event.target)) {
+            closeSortMenu();
+        }
+    });
+    
+    // Fermer le menu avec la touche Échap
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && sortMenuOpen) {
             closeSortMenu();
         }
     });
@@ -37,15 +47,20 @@ function loadClientsStats() {
     const sales = db.getSales();
     const clientsWithPurchases = new Set(sales.map(s => s.clientId)).size;
     
+    // Client le plus fidèle
     const clientPurchaseCount = {};
     sales.forEach(sale => {
         clientPurchaseCount[sale.clientId] = (clientPurchaseCount[sale.clientId] || 0) + 1;
     });
     
-    const topClientId = Object.entries(clientPurchaseCount)
+    const topClientEntry = Object.entries(clientPurchaseCount)
         .sort(([,a], [,b]) => b - a)[0];
     
-    const topClient = topClientId ? db.getClientById(topClientId[0]) : null;
+    const topClient = topClientEntry ? db.getClientById(topClientEntry[0]) : null;
+
+    // Moyenne d'achats par client actif
+    const avgPurchases = clientsWithPurchases > 0 ? 
+        (sales.length / clientsWithPurchases).toFixed(1) : '0';
 
     document.getElementById('clientsStats').innerHTML = `
         <div class="stat-card">
@@ -58,7 +73,7 @@ function loadClientsStats() {
             <i class="fas fa-shopping-bag"></i>
             <div class="stat-label">Clients actifs</div>
             <div class="stat-value">${clientsWithPurchases}</div>
-            <small>Avec achats</small>
+            <small>${avgPurchases} achats/client</small>
         </div>
         <div class="stat-card profit">
             <i class="fas fa-star"></i>
@@ -66,7 +81,7 @@ function loadClientsStats() {
             <div class="stat-value" style="font-size: 1rem;">
                 ${topClient ? topClient.name : 'N/A'}
             </div>
-            <small>${topClientId ? topClientId[1] + ' achats' : 'Aucun achat'}</small>
+            <small>${topClientEntry ? topClientEntry[1] + ' achats' : 'Aucun achat'}</small>
         </div>
         <div class="stat-card">
             <i class="fas fa-calendar-check"></i>
@@ -87,68 +102,80 @@ function toggleSortMenu() {
     const dropdown = document.getElementById('sortDropdown');
     const overlay = document.getElementById('sortOverlay');
     const button = document.getElementById('sortMenuButton');
+    const arrow = button.querySelector('.btn-sort-arrow');
     
     if (sortMenuOpen) {
-        // Fermer le menu
-        dropdown.style.display = 'none';
-        overlay.style.display = 'none';
-        button.querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
-        sortMenuOpen = false;
+        closeSortMenu();
     } else {
-        // Ouvrir le menu avec animation
         dropdown.style.display = 'block';
         overlay.style.display = 'block';
-        button.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+        arrow.style.transform = 'rotate(180deg)';
         sortMenuOpen = true;
         
+        // Animation d'ouverture
         dropdown.style.opacity = '0';
         dropdown.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-            dropdown.style.transition = 'all 0.3s ease';
+        requestAnimationFrame(() => {
+            dropdown.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
             dropdown.style.opacity = '1';
             dropdown.style.transform = 'translateY(0)';
-        }, 10);
+        });
+        
+        // Mettre en évidence l'option active
+        updateActiveSortOption(currentSortCriteria);
     }
 }
 
 function closeSortMenu() {
-    if (sortMenuOpen) {
-        toggleSortMenu();
-    }
+    if (!sortMenuOpen) return;
+    
+    const dropdown = document.getElementById('sortDropdown');
+    const overlay = document.getElementById('sortOverlay');
+    const button = document.getElementById('sortMenuButton');
+    const arrow = button.querySelector('.btn-sort-arrow');
+    
+    dropdown.style.opacity = '0';
+    dropdown.style.transform = 'translateY(-10px)';
+    
+    setTimeout(() => {
+        dropdown.style.display = 'none';
+        overlay.style.display = 'none';
+    }, 200);
+    
+    arrow.style.transform = 'rotate(0deg)';
+    sortMenuOpen = false;
 }
 
 function selectSortOption(sortType, label) {
-    // Mettre à jour le label du bouton
-    document.getElementById('sortMenuLabel').textContent = 'Trier par : ' + label;
+    currentSortCriteria = sortType;
     
-    // Mettre à jour les icônes de check
-    document.querySelectorAll('.sort-option').forEach(option => {
-        const checkIcon = option.querySelector('.fa-check');
-        if (option.dataset.sort === sortType) {
-            checkIcon.style.display = 'block';
-            option.style.background = 'var(--light-bg)';
-        } else {
-            checkIcon.style.display = 'none';
-            option.style.background = 'transparent';
-        }
-    });
+    // Mettre à jour le label du bouton
+    document.getElementById('sortMenuLabel').textContent = label;
+    
+    // Mettre à jour les options actives
+    updateActiveSortOption(sortType);
     
     // Fermer le menu
     closeSortMenu();
     
     // Appliquer le tri
     sortClients(sortType);
+    
+    // Feedback haptique si disponible
+    if (navigator.vibrate) {
+        navigator.vibrate(10);
+    }
 }
 
 function updateActiveSortOption(sortType) {
     document.querySelectorAll('.sort-option').forEach(option => {
-        const checkIcon = option.querySelector('.fa-check');
+        const checkIcon = option.querySelector('.sort-option-check');
         if (option.dataset.sort === sortType) {
-            checkIcon.style.display = 'block';
-            option.style.background = 'var(--light-bg)';
+            option.classList.add('active');
+            if (checkIcon) checkIcon.style.display = 'block';
         } else {
-            checkIcon.style.display = 'none';
-            option.style.background = 'transparent';
+            option.classList.remove('active');
+            if (checkIcon) checkIcon.style.display = 'none';
         }
     });
 }
@@ -158,40 +185,50 @@ function updateActiveSortOption(sortType) {
 // ============================================
 
 function sortClients(criteria) {
+    currentSortCriteria = criteria;
+    
     // Mettre à jour le menu de tri
     updateActiveSortOption(criteria);
     
-    // Récupérer tous les clients
     const clients = db.getClients();
     const sales = db.getSales();
     
-    // Créer un tableau avec les statistiques de chaque client
+    // Enrichir les clients avec leurs statistiques
     const clientsWithStats = clients.map(client => {
         const clientSales = sales.filter(s => s.clientId === client.id);
         const totalPurchases = clientSales.length;
         const totalSpent = clientSales.reduce((sum, s) => sum + s.totalAmount, 0);
+        
+        // Dernier achat
         const lastPurchase = clientSales.length > 0 ? 
             new Date(Math.max(...clientSales.map(s => new Date(s.createdAt)))) : null;
+        
+        // Date d'ajout du client
+        const addedDate = client.createdAt ? new Date(client.createdAt) : new Date(0);
         
         return {
             ...client,
             totalPurchases,
             totalSpent,
-            lastPurchase
+            lastPurchase,
+            addedDate
         };
     });
     
-    // Trier selon le critère choisi
+    // Appliquer le tri
     switch(criteria) {
         case 'name':
             clientsWithStats.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
             break;
+            
         case 'purchases':
             clientsWithStats.sort((a, b) => b.totalPurchases - a.totalPurchases);
             break;
+            
         case 'total':
             clientsWithStats.sort((a, b) => b.totalSpent - a.totalSpent);
             break;
+            
         case 'date':
             clientsWithStats.sort((a, b) => {
                 const dateA = a.lastPurchase ? new Date(a.lastPurchase) : new Date(0);
@@ -199,6 +236,15 @@ function sortClients(criteria) {
                 return dateB - dateA;
             });
             break;
+            
+        case 'added':
+            clientsWithStats.sort((a, b) => {
+                const dateA = a.addedDate ? new Date(a.addedDate) : new Date(0);
+                const dateB = b.addedDate ? new Date(b.addedDate) : new Date(0);
+                return dateB - dateA;
+            });
+            break;
+            
         default:
             clientsWithStats.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     }
@@ -210,18 +256,19 @@ function sortClients(criteria) {
 function displaySortedClients(clients, sortCriteria) {
     const container = document.getElementById('clientsList');
     const noClients = document.getElementById('noClients');
-    const searchTerm = document.getElementById('searchClient')?.value || '';
+    const searchTerm = document.getElementById('searchClient')?.value?.toLowerCase() || '';
     
-    // Filtrer si une recherche est active
+    // Filtrer si recherche active
     let filteredClients = clients;
     if (searchTerm) {
         filteredClients = clients.filter(c => 
-            c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.name.toLowerCase().includes(searchTerm) ||
             c.phone.includes(searchTerm) ||
-            (c.address && c.address.toLowerCase().includes(searchTerm.toLowerCase()))
+            (c.address && c.address.toLowerCase().includes(searchTerm))
         );
     }
     
+    // État vide
     if (filteredClients.length === 0) {
         container.innerHTML = '';
         noClients.style.display = 'block';
@@ -229,123 +276,174 @@ function displaySortedClients(clients, sortCriteria) {
     }
     
     noClients.style.display = 'none';
-    let html = '';
     
-    // Badge pour indiquer le critère de tri
+    // Labels pour chaque critère de tri
     const criteriaLabels = {
-        'name': 'Trié par nom',
+        'name': 'Trié par nom (A-Z)',
         'purchases': 'Trié par nombre d\'achats',
         'total': 'Trié par total dépensé',
-        'date': 'Trié par dernier achat'
+        'date': 'Trié par dernier achat',
+        'added': 'Trié par date d\'ajout'
     };
     
-    html += `
-        <div style="margin-bottom: 15px; padding: 8px 12px; background: var(--light-bg); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary);">
-            <i class="fas fa-info-circle"></i> ${criteriaLabels[sortCriteria] || 'Trié par défaut'} 
-            (${filteredClients.length} client${filteredClients.length > 1 ? 's' : ''})
+    const criteriaIcons = {
+        'name': 'fa-user',
+        'purchases': 'fa-shopping-cart',
+        'total': 'fa-euro-sign',
+        'date': 'fa-calendar-check',
+        'added': 'fa-user-plus'
+    };
+    
+    // Barre d'information du tri
+    let html = `
+        <div class="sort-info-bar">
+            <i class="fas ${criteriaIcons[sortCriteria] || 'fa-sort'}"></i>
+            ${criteriaLabels[sortCriteria] || 'Trié par défaut'}
+            <span class="count">${filteredClients.length} client${filteredClients.length > 1 ? 's' : ''}</span>
         </div>
     `;
     
+    // Générer les cartes clients
     filteredClients.forEach((client, index) => {
         const rank = index + 1;
-        let rankBadge = '';
         
+        // Médaille pour le top 3 (sauf pour le tri par nom)
+        let rankBadge = '';
         if (rank <= 3 && sortCriteria !== 'name') {
             const medals = ['🥇', '🥈', '🥉'];
-            rankBadge = `<span style="font-size: 1.2rem; margin-right: 8px;">${medals[rank - 1]}</span>`;
+            rankBadge = `<span class="rank-medal">${medals[rank - 1]}</span>`;
         }
         
+        // Date du dernier achat
         const lastPurchase = client.lastPurchase;
         const lastPurchaseDate = lastPurchase ? 
-            lastPurchase.toLocaleDateString('fr-FR') : 'Aucun achat';
+            lastPurchase.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : 
+            'Aucun achat';
         
-        // Calculer le niveau du client
-        let clientLevel = '';
-        let levelColor = '';
+        // Date d'ajout
+        const addedDate = client.addedDate && client.addedDate.getTime() > 0 ? 
+            client.addedDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : 
+            'Inconnue';
+        
+        // Niveau client
+        let clientLevel, levelClass;
         if (client.totalSpent > 1000) {
             clientLevel = 'VIP';
-            levelColor = '#f59e0b';
+            levelClass = 'level-vip';
         } else if (client.totalSpent > 500) {
             clientLevel = 'Fidèle';
-            levelColor = '#8b5cf6';
+            levelClass = 'level-fidele';
         } else if (client.totalPurchases > 0) {
             clientLevel = 'Régulier';
-            levelColor = '#3b82f6';
+            levelClass = 'level-regulier';
         } else {
             clientLevel = 'Nouveau';
-            levelColor = '#10b981';
+            levelClass = 'level-nouveau';
+        }
+        
+        // Couleur de la barre de progression
+        let progressColor;
+        switch(clientLevel) {
+            case 'VIP': progressColor = '#f59e0b'; break;
+            case 'Fidèle': progressColor = '#8b5cf6'; break;
+            case 'Régulier': progressColor = '#3b82f6'; break;
+            default: progressColor = '#10b981';
+        }
+        
+        // Icône de statut d'activité
+        const isActive = client.totalPurchases > 0;
+        const lastPurchaseDays = lastPurchase ? 
+            Math.floor((new Date() - lastPurchase) / (1000 * 60 * 60 * 24)) : 999;
+        
+        let activityIcon, activityColor;
+        if (!isActive) {
+            activityIcon = 'fa-circle';
+            activityColor = '#d1d5db';
+        } else if (lastPurchaseDays <= 7) {
+            activityIcon = 'fa-circle';
+            activityColor = '#10b981';
+        } else if (lastPurchaseDays <= 30) {
+            activityIcon = 'fa-circle';
+            activityColor = '#f59e0b';
+        } else {
+            activityIcon = 'fa-circle';
+            activityColor = '#ef4444';
         }
         
         html += `
-            <div class="client-card" style="background: var(--light-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; 
-                        border: 1px solid var(--border-color); transition: all 0.3s ease; opacity: 0; transform: translateY(20px);"
-                 onmouseover="this.style.transform='translateX(5px)'" 
-                 onmouseout="this.style.transform='translateX(0)'">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <div class="client-card animate-in" style="animation-delay: ${index * 0.05}s;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <!-- En-tête avec avatar -->
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                             ${rankBadge}
-                            <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); 
-                                        color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-                                        font-weight: bold; font-size: 1.1rem; position: relative;">
+                            <div class="client-avatar">
                                 ${client.name.charAt(0).toUpperCase()}
-                                <span style="position: absolute; bottom: -5px; right: -5px; background: ${levelColor}; 
-                                            color: white; border-radius: 50%; width: 20px; height: 20px; 
-                                            display: flex; align-items: center; justify-content: center; font-size: 0.6rem; 
-                                            border: 2px solid white;">
-                                    ${rank <= 3 ? '⭐' : ''}
-                                </span>
-                            </div>
-                            <div>
-                                <div style="font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
-                                    ${client.name}
-                                    <span style="font-size: 0.7rem; background: ${levelColor}; color: white; 
-                                                padding: 2px 8px; border-radius: 10px;">${clientLevel}</span>
+                                <div class="level-badge" style="background: ${progressColor};">
+                                    ${isActive ? '⭐' : '○'}
                                 </div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        ${client.name}
+                                    </span>
+                                    <span class="${levelClass}">${clientLevel}</span>
+                                    <span style="font-size: 0.6rem; color: ${activityColor};" title="${isActive ? 'Actif il y a ' + lastPurchaseDays + ' jours' : 'Jamais actif'}">
+                                        <i class="fas ${activityIcon}"></i>
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
                                     <i class="fas fa-phone"></i> ${client.phone}
                                 </div>
                             </div>
                         </div>
                         
+                        <!-- Adresse -->
                         ${client.address ? `
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px; margin-left: ${rank <= 3 ? '28px' : '0px'};">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; padding-left: ${rank <= 3 ? '28px' : '0px'};">
                                 <i class="fas fa-map-marker-alt"></i> ${client.address}
                             </div>
                         ` : ''}
                         
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; margin-left: ${rank <= 3 ? '28px' : '0px'};">
-                            <span class="badge badge-info">
-                                <i class="fas fa-shopping-cart"></i> ${client.totalPurchases || 0} achat${client.totalPurchases > 1 ? 's' : ''}
+                        <!-- Statistiques -->
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; padding-left: ${rank <= 3 ? '28px' : '0px'};">
+                            <span class="badge badge-info" style="font-size: 0.7rem;">
+                                <i class="fas fa-shopping-cart"></i> ${client.totalPurchases} achat${client.totalPurchases > 1 ? 's' : ''}
                             </span>
-                            <span class="badge badge-success">
-                                <i class="fas fa-euro-sign"></i> ${(client.totalSpent || 0).toFixed(2)} €
+                            <span class="badge badge-success" style="font-size: 0.7rem;">
+                                <i class="fas fa-euro-sign"></i> ${(client.totalSpent || 0).toFixed(0)} €
                             </span>
-                            <span class="badge badge-info">
-                                <i class="fas fa-clock"></i> ${lastPurchaseDate}
+                            ${lastPurchase ? `
+                                <span class="badge" style="font-size: 0.7rem; background: #eff6ff; color: #1e40af;">
+                                    <i class="fas fa-clock"></i> ${lastPurchaseDate}
+                                </span>
+                            ` : ''}
+                            <span class="badge" style="font-size: 0.7rem; background: #f0fdf4; color: #065f46;">
+                                <i class="fas fa-user-plus"></i> ${addedDate}
                             </span>
                         </div>
                         
+                        <!-- Barre de progression -->
                         ${client.totalSpent > 0 ? `
-                            <div style="margin-top: 10px; margin-left: ${rank <= 3 ? '28px' : '0px'};">
-                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 3px;">
-                                    <span>Niveau client</span>
-                                    <span>${clientLevel}</span>
+                            <div style="padding-left: ${rank <= 3 ? '28px' : '0px'};">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 4px;">
+                                    <span style="color: var(--text-secondary);">Progression ${clientLevel}</span>
+                                    <span style="font-weight: 600; color: ${progressColor};">${Math.min((client.totalSpent / 1000) * 100, 100).toFixed(0)}%</span>
                                 </div>
-                                <div style="width: 100%; height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden;">
-                                    <div style="width: ${Math.min((client.totalSpent / 1000) * 100, 100)}%; height: 100%; 
-                                                background: linear-gradient(90deg, var(--primary-color), ${levelColor}); 
-                                                border-radius: 2px; transition: width 1s ease;"></div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" style="width: ${Math.min((client.totalSpent / 1000) * 100, 100)}%; background: linear-gradient(90deg, var(--primary-color), ${progressColor});"></div>
                                 </div>
                             </div>
                         ` : ''}
                     </div>
                     
-                    <div style="display: flex; gap: 5px; flex-direction: column;">
-                        <button class="btn btn-sm btn-secondary" onclick="editClient('${client.id}')" title="Modifier">
+                    <!-- Boutons d'action -->
+                    <div class="client-actions">
+                        <button class="btn btn-edit" onclick="editClient('${client.id}')" title="Modifier">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteClient('${client.id}')" title="Supprimer">
+                        <button class="btn btn-delete" onclick="deleteClient('${client.id}')" title="Supprimer">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -355,35 +453,20 @@ function displaySortedClients(clients, sortCriteria) {
     });
     
     container.innerHTML = html;
-    
-    // Animation d'entrée pour les cartes
-    const cards = container.querySelectorAll('.client-card');
-    cards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.transition = 'all 0.3s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 50);
-    });
+}
+
+// ============================================
+// FILTRE ET RECHERCHE
+// ============================================
+
+function filterClients() {
+    // Maintenir le tri actuel avec le filtre
+    sortClients(currentSortCriteria);
 }
 
 // ============================================
 // GESTION DES CLIENTS (CRUD)
 // ============================================
-
-function filterClients() {
-    const searchTerm = document.getElementById('searchClient').value;
-    
-    // Utiliser le tri actuel avec le filtre
-    const sortLabel = document.getElementById('sortMenuLabel').textContent;
-    let currentSort = 'name';
-    
-    if (sortLabel.includes('achats')) currentSort = 'purchases';
-    else if (sortLabel.includes('dépensé')) currentSort = 'total';
-    else if (sortLabel.includes('Dernier')) currentSort = 'date';
-    
-    sortClients(currentSort);
-}
 
 function showAddClientModal() {
     editingClientId = null;
@@ -420,6 +503,7 @@ function saveClient(event) {
         address: document.getElementById('clientAddress').value.trim()
     };
 
+    // Validation
     if (!clientData.name) {
         showToast('Le nom du client est requis', 'error');
         return;
@@ -429,6 +513,7 @@ function saveClient(event) {
         return;
     }
 
+    // Vérifier les doublons de téléphone
     const clients = db.getClients();
     const duplicatePhone = clients.find(c => 
         c.phone === clientData.phone && c.id !== editingClientId
@@ -439,33 +524,22 @@ function saveClient(event) {
         return;
     }
 
+    let success;
     if (editingClientId) {
-        if (db.updateClient(editingClientId, clientData)) {
-            showToast('Client modifié avec succès', 'success');
-        } else {
-            showToast('Erreur lors de la modification', 'error');
-            return;
-        }
+        success = db.updateClient(editingClientId, clientData);
+        if (success) showToast('Client modifié avec succès', 'success');
+        else showToast('Erreur lors de la modification', 'error');
     } else {
-        if (db.addClient(clientData)) {
-            showToast('Client ajouté avec succès', 'success');
-        } else {
-            showToast('Erreur lors de l\'ajout', 'error');
-            return;
-        }
+        success = db.addClient(clientData);
+        if (success) showToast('Client ajouté avec succès', 'success');
+        else showToast('Erreur lors de l\'ajout', 'error');
     }
 
-    closeClientModal();
-    loadClientsStats();
-    
-    // Maintenir le tri actuel
-    const sortLabel = document.getElementById('sortMenuLabel').textContent;
-    let currentSort = 'name';
-    if (sortLabel.includes('achats')) currentSort = 'purchases';
-    else if (sortLabel.includes('dépensé')) currentSort = 'total';
-    else if (sortLabel.includes('Dernier')) currentSort = 'date';
-    
-    sortClients(currentSort);
+    if (success) {
+        closeClientModal();
+        loadClientsStats();
+        sortClients(currentSortCriteria);
+    }
 }
 
 function deleteClient(id) {
@@ -475,30 +549,21 @@ function deleteClient(id) {
     const sales = db.getSales();
     const clientSales = sales.filter(s => s.clientId === id);
     
+    let message;
     if (clientSales.length > 0) {
-        if (!confirm(`Ce client a ${clientSales.length} achat(s). Voulez-vous vraiment le supprimer ? Les ventes seront conservées mais le client apparaîtra comme "Inconnu".`)) {
-            return;
-        }
+        message = `Ce client a ${clientSales.length} achat(s) et un historique de vente.\n\nLes ventes seront conservées mais le client apparaîtra comme "Inconnu".\n\nSupprimer ${client.name} ?`;
     } else {
-        if (!confirm(`Êtes-vous sûr de vouloir supprimer ${client.name} ?`)) {
-            return;
-        }
+        message = `Supprimer définitivement ${client.name} ?`;
     }
 
-    if (db.deleteClient(id)) {
-        showToast('Client supprimé avec succès', 'success');
-        loadClientsStats();
-        
-        // Maintenir le tri actuel
-        const sortLabel = document.getElementById('sortMenuLabel').textContent;
-        let currentSort = 'name';
-        if (sortLabel.includes('achats')) currentSort = 'purchases';
-        else if (sortLabel.includes('dépensé')) currentSort = 'total';
-        else if (sortLabel.includes('Dernier')) currentSort = 'date';
-        
-        sortClients(currentSort);
-    } else {
-        showToast('Erreur lors de la suppression', 'error');
+    if (confirm(message)) {
+        if (db.deleteClient(id)) {
+            showToast('Client supprimé avec succès', 'success');
+            loadClientsStats();
+            sortClients(currentSortCriteria);
+        } else {
+            showToast('Erreur lors de la suppression', 'error');
+        }
     }
 }
 
@@ -508,20 +573,33 @@ function deleteClient(id) {
 
 function showToast(message, type = 'success') {
     const existingToasts = document.querySelectorAll('.toast');
-    existingToasts.forEach(t => t.remove());
+    existingToasts.forEach(t => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(100%)';
+        setTimeout(() => t.remove(), 300);
+    });
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+    const color = type === 'success' ? 'var(--secondary-color)' : 'var(--danger-color)';
+    
     toast.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}" 
-               style="color: ${type === 'success' ? 'var(--secondary-color)' : 'var(--danger-color)'};"></i>
+            <i class="fas fa-${icon}" style="color: ${color}; font-size: 1.2rem;"></i>
             <span>${message}</span>
         </div>
     `;
     
     document.body.appendChild(toast);
     
+    // Animation d'entrée
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
+    });
+    
+    // Disparition automatique
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(100%)';
@@ -545,6 +623,11 @@ document.addEventListener('click', function(event) {
 (function() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.body.setAttribute('data-theme', savedTheme);
+    
+    const icon = document.querySelector('.theme-toggle i');
+    if (icon) {
+        icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
 })();
 
 function toggleTheme() {
