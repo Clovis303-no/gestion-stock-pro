@@ -55,75 +55,94 @@
                 <!-- Rempli dynamiquement -->
             </div>
 
-            <!-- Recherche et ajout -->
+            <!-- Barre de recherche -->
             <div class="search-bar">
                 <i class="fas fa-search"></i>
                 <input type="text" id="searchClient" placeholder="Rechercher un client..." onkeyup="filterClients()">
             </div>
 
-<!-- Menu de tri flottant -->
-<div style="position: relative; margin-bottom: 15px;">
-    <button class="btn btn-sm btn-primary" onclick="toggleSortMenu()" id="sortMenuButton" style="width: auto; padding: 10px 16px;">
-        <i class="fas fa-sort-amount-down"></i> 
-        <span id="sortMenuLabel">Trier par : Nom</span>
-        <i class="fas fa-chevron-down" style="margin-left: 8px; font-size: 0.8rem;"></i>
-    </button>
-    
-    <!-- Menu déroulant -->
-    <div id="sortDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; 
-                background: var(--white); border-radius: 12px; box-shadow: var(--shadow-lg); 
-                z-index: 999; margin-top: 5px; overflow: hidden; border: 1px solid var(--border-color);">
-        
-        <div class="sort-option active" onclick="selectSortOption('name', 'Nom')" data-sort="name" 
-             style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; 
-                    border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
-            <i class="fas fa-user" style="width: 20px; text-align: center;"></i>
-            <div>
-                <div style="font-weight: 600; font-size: 0.9rem;">Nom</div>
-                <small style="color: var(--text-secondary);">Ordre alphabétique</small>
+            <!-- Menu de tri flottant -->
+            <div style="position: relative; margin-bottom: 15px;">
+                <button class="btn btn-sort" onclick="toggleSortMenu()" id="sortMenuButton">
+                    <div class="btn-sort-content">
+                        <div class="btn-sort-icon">
+                            <i class="fas fa-sort-amount-down"></i>
+                        </div>
+                        <div class="btn-sort-text">
+                            <small>Trier par</small>
+                            <span id="sortMenuLabel">Nom</span>
+                        </div>
+                        <i class="fas fa-chevron-down btn-sort-arrow"></i>
+                    </div>
+                </button>
+                
+                <!-- Menu déroulant -->
+                <div id="sortDropdown" class="sort-dropdown">
+                    <div class="sort-dropdown-header">
+                        <i class="fas fa-arrow-down-wide-short"></i> Trier les clients
+                    </div>
+                    
+                    <div class="sort-option active" onclick="selectSortOption('name', 'Nom')" data-sort="name">
+                        <div class="sort-option-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="sort-option-info">
+                            <div class="sort-option-title">Nom</div>
+                            <div class="sort-option-desc">Ordre alphabétique</div>
+                        </div>
+                        <i class="fas fa-check sort-option-check"></i>
+                    </div>
+                    
+                    <div class="sort-option" onclick="selectSortOption('purchases', 'Nombre d\'achats')" data-sort="purchases">
+                        <div class="sort-option-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="sort-option-info">
+                            <div class="sort-option-title">Nombre d'achats</div>
+                            <div class="sort-option-desc">Clients les plus fidèles</div>
+                        </div>
+                        <i class="fas fa-check sort-option-check"></i>
+                    </div>
+                    
+                    <div class="sort-option" onclick="selectSortOption('total', 'Total dépensé')" data-sort="total">
+                        <div class="sort-option-icon">
+                            <i class="fas fa-euro-sign"></i>
+                        </div>
+                        <div class="sort-option-info">
+                            <div class="sort-option-title">Total dépensé</div>
+                            <div class="sort-option-desc">Plus gros acheteurs</div>
+                        </div>
+                        <i class="fas fa-check sort-option-check"></i>
+                    </div>
+                    
+                    <div class="sort-option" onclick="selectSortOption('date', 'Dernier achat')" data-sort="date">
+                        <div class="sort-option-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="sort-option-info">
+                            <div class="sort-option-title">Dernier achat</div>
+                            <div class="sort-option-desc">Activité la plus récente</div>
+                        </div>
+                        <i class="fas fa-check sort-option-check"></i>
+                    </div>
+                    
+                    <div class="sort-option" onclick="selectSortOption('added', 'Date d\'ajout')" data-sort="added">
+                        <div class="sort-option-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="sort-option-info">
+                            <div class="sort-option-title">Date d'ajout</div>
+                            <div class="sort-option-desc">Derniers clients inscrits</div>
+                        </div>
+                        <i class="fas fa-check sort-option-check"></i>
+                    </div>
+                </div>
             </div>
-            <i class="fas fa-check" style="margin-left: auto; color: var(--primary-color);"></i>
-        </div>
-        
-        <div class="sort-option" onclick="selectSortOption('purchases', 'Nombre d\'achats')" data-sort="purchases" 
-             style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; 
-                    border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
-            <i class="fas fa-shopping-cart" style="width: 20px; text-align: center;"></i>
-            <div>
-                <div style="font-weight: 600; font-size: 0.9rem;">Nombre d'achats</div>
-                <small style="color: var(--text-secondary);">Clients les plus fidèles</small>
-            </div>
-            <i class="fas fa-check" style="margin-left: auto; color: var(--primary-color); display: none;"></i>
-        </div>
-        
-        <div class="sort-option" onclick="selectSortOption('total', 'Total dépensé')" data-sort="total" 
-             style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; 
-                    border-bottom: 1px solid var(--border-color); transition: background 0.2s;">
-            <i class="fas fa-euro-sign" style="width: 20px; text-align: center;"></i>
-            <div>
-                <div style="font-weight: 600; font-size: 0.9rem;">Total dépensé</div>
-                <small style="color: var(--text-secondary);">Plus gros acheteurs</small>
-            </div>
-            <i class="fas fa-check" style="margin-left: auto; color: var(--primary-color); display: none;"></i>
-        </div>
-        
-        <div class="sort-option" onclick="selectSortOption('date', 'Dernier achat')" data-sort="date" 
-             style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; 
-                    transition: background 0.2s;">
-            <i class="fas fa-calendar" style="width: 20px; text-align: center;"></i>
-            <div>
-                <div style="font-weight: 600; font-size: 0.9rem;">Dernier achat</div>
-                <small style="color: var(--text-secondary);">Plus récents</small>
-            </div>
-            <i class="fas fa-check" style="margin-left: auto; color: var(--primary-color); display: none;"></i>
-        </div>
-    </div>
-</div>
 
-<!-- Overlay pour fermer le menu en cliquant ailleurs -->
-<div id="sortOverlay" onclick="closeSortMenu()" 
-     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 998;"></div>
+            <!-- Overlay pour fermer le menu -->
+            <div id="sortOverlay" class="sort-overlay" onclick="closeSortMenu()"></div>
 
+            <!-- Bouton ajouter -->
             <button class="btn btn-primary" onclick="showAddClientModal()" style="margin-bottom: 20px;">
                 <i class="fas fa-user-plus"></i> Ajouter un client
             </button>
